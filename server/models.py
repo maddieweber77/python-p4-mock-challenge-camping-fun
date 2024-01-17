@@ -24,9 +24,11 @@ class Activity(db.Model, SerializerMixin):
     name = db.Column(db.String)
     difficulty = db.Column(db.Integer)
 
-    # Add relationship
     
-    # Add serialization rules
+    #this table connects the many to many relationship with campers
+    signups = db.relationship(
+        "Signup", cascade="all,delete", backref="activity")
+    serialize_rules = ("-signups.activity",)
     
     def __repr__(self):
         return f'<Activity {self.id}: {self.name}>'
@@ -40,12 +42,29 @@ class Camper(db.Model, SerializerMixin):
     age = db.Column(db.Integer)
 
     # Add relationship
-    
+    signups = db.relationship("Signup", backref = "camper")
+
     # Add serialization rules
+    serialize_rules = ("-signups.camper",)
     
     # Add validation
+    @validates('name')
+    def validate_name(self, key, name):
+        print('Inside the name validation')
+        if not name or len(name) < 1:
+            raise ValueError("Name must exist")
     
-    
+        return name
+
+    @validates('age')
+    def validate_age(self, key, age):
+        print('Inside the age validation')
+        if not 8 <= age <= 18:
+            print('Invalid!!')
+            raise ValueError("Age must be 8 to 18")
+        
+        return age
+
     def __repr__(self):
         return f'<Camper {self.id}: {self.name}>'
 
@@ -56,12 +75,21 @@ class Signup(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     time = db.Column(db.Integer)
 
-    # Add relationships
+    # Add relationship
+    camper_id = db.Column(db.Integer, db.ForeignKey("campers.id"))
+    activity_id = db.Column(db.Integer, db. ForeignKey("activities.id"))
     
     # Add serialization rules
+    serialize_rules = ("-camper.signups", "-activity.signups")
     
     # Add validation
-    
+    @validates('time')
+    def validate_time(self, key, time):
+
+        if not 0 <= time <= 23:
+            raise ValueError("Time must be within limits")
+        return time
+
     def __repr__(self):
         return f'<Signup {self.id}>'
 
